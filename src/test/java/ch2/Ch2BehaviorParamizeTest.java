@@ -29,6 +29,8 @@ class Ch2BehaviorParamizeTest {
 
         //predicate 굳이 안하고 람다로 하는게 좋을듯
         Apple.filterApples(inventory, apple -> Apple.Colors.RED.equals(apple.getColor()));
+
+        inventory.stream().filter(apple -> Apple.Colors.GREEN.equals(apple.getColor()));
     }
 
     @Test
