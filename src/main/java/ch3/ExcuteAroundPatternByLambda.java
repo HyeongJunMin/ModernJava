@@ -1,6 +1,7 @@
 package ch3;
 
 import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils.IO;
+import common.Apple;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;

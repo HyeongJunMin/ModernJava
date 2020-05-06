@@ -13,7 +13,13 @@ import java.util.stream.Collectors;
 @ToString
 @NoArgsConstructor
 @AllArgsConstructor
-public class Apple {
+public class Apple implements Item{
+
+    @Override
+    public boolean test() {
+        return true;
+    }
+
 
     public enum Colors {
         GREEN, RED, BLACK
