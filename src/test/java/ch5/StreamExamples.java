@@ -1,5 +1,6 @@
 package ch5;
 
+
 import static java.util.stream.Collectors.toList;
 
 import common.Dish;
@@ -12,10 +13,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -175,4 +180,36 @@ public class StreamExamples {
 
   }
 
+  @Test
+  public void groupingByTest() {
+    //toMap으로 Map 생성
+    Map<String, Boolean> dishMap = menu.stream()
+        .collect(Collectors.toMap(Dish::getName, Dish::isVegeterian));
+
+    //groupingBy로 Map 생성
+    Map<Type, List<Dish>> groupingByType = menu.stream()
+        .collect(Collectors.groupingBy(Dish::getType));
+
+    Map<String, List<Dish>> collect = menu.stream()
+        .collect(Collectors.groupingBy(Dish::getName));
+  }
+
+  @Test
+  public void iji() {
+    Asd asd = new Asd();
+    System.out.println(asd);
+    asd.setEnum1(Enum1.A);
+    System.out.println(asd);
+  }
+
+  @Setter
+  @Getter
+  @ToString
+  public class Asd {
+    private Enum1 enum1;
+  }
+
+  public enum Enum1 {
+    A, B, C
+  }
 }
