@@ -1,6 +1,6 @@
-package common;
+package com.mj.modernjava.common;
 
-import ch2.ApplePredicate;
+import com.mj.modernjava.ch2.ApplePredicate;
 import lombok.*;
 
 import java.util.ArrayList;

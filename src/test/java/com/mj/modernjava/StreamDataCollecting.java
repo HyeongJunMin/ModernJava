@@ -1,3 +1,5 @@
+package com.mj.modernjava;
+
 import static java.util.stream.Collectors.averagingInt;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.maxBy;
@@ -5,8 +7,8 @@ import static java.util.stream.Collectors.reducing;
 import static java.util.stream.Collectors.summarizingInt;
 import static java.util.stream.Collectors.summingInt;
 
-import common.Dish;
-import common.Dish.Type;
+import com.mj.modernjava.common.Dish;
+import com.mj.modernjava.common.Dish.Type;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.IntSummaryStatistics;

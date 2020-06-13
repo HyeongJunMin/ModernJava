@@ -1,7 +1,7 @@
-package ch4;
+package com.mj.modernjava.ch4;
 
-import common.Dish;
-import common.Dish.Type;
+import com.mj.modernjava.common.Dish;
+import com.mj.modernjava.common.Dish.Type;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 @Slf4j

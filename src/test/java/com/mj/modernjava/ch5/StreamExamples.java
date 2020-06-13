@@ -1,10 +1,10 @@
-package ch5;
+package com.mj.modernjava.ch5;
 
 
 import static java.util.stream.Collectors.toList;
 
-import common.Dish;
-import common.Dish.Type;
+import com.mj.modernjava.common.Dish;
+import com.mj.modernjava.common.Dish.Type;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
@@ -23,7 +23,6 @@ import lombok.Setter;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 @Slf4j

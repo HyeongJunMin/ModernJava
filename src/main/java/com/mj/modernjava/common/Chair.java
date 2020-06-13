@@ -1,4 +1,4 @@
-package common;
+package com.mj.modernjava.common;
 
 import lombok.*;
 

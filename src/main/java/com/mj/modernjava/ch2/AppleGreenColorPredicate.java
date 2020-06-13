@@ -1,6 +1,6 @@
-package ch2;
+package com.mj.modernjava.ch2;
 
-import common.Apple;
+import com.mj.modernjava.common.Apple;
 
 public class AppleGreenColorPredicate implements ApplePredicate {
     @Override

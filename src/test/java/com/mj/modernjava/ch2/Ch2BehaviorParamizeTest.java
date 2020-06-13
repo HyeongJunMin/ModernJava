@@ -1,6 +1,6 @@
-package ch2;
+package com.mj.modernjava.ch2;
 
-import common.Apple;
+import com.mj.modernjava.common.Apple;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

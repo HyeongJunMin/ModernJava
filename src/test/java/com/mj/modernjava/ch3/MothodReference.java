@@ -1,7 +1,6 @@
-package ch3;
+package com.mj.modernjava.ch3;
 
-import common.Apple;
-import common.Item;
+import com.mj.modernjava.common.Apple;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
