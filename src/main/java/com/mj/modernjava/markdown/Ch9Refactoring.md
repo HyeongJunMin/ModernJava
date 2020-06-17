@@ -6,7 +6,7 @@
 ---
 
 #### 요약 및 결론
-
+디자인패턴들 알려주고 람다 표현식 적용방법 간단히 알려줌 예제가 너무 간단해서 더 복잡해져야 재밌을듯
 ---
 
 #### 책 내용
@@ -137,8 +137,103 @@
     1.  전략 패턴
         -   한 유형의 알고리즘을 보유한 상태에서 런타임에 적절한 알고리즘을 선택하는 기법
         -   예제 : 텍스트 입력 검증(오직 소문자 또는 숫자로 이루어져야 하는 등)
-        -   
-       
+        -   ~~~
+            @Test
+            public void strategyPatternTest() {
+              Validator numericValidator = new Validator(new IsNumeric());
+              Validator numericLambda = new Validator(s -> s.matches("[a-z]+"));
+              boolean isNumeric = numericValidator.validate("aaaa");
+              log.debug("is numeric : {}", isNumeric);  //is numeric : false
+            
+              Validator caseValidator = new Validator(new IsAllLowerCase());
+              Validator caseLambda = new Validator(s -> s.matches("\\d+"));
+              boolean isLower = caseValidator.validate("aaaa");
+              log.debug("is lower case : {}", isLower); //is lower case : true
+            }
+            ~~~
+    2.  템플릿 메서드
+        -   알고리즘의 개요를 제시한 다음 알고리즘의 일부를 고쳐야 할 때 사용
+        -   예제 : 온라인 뱅킹 애플리케이션이 있을 때, 지점마다 다른 방법으로 고객만족 기능이 동작해야 하는 경우.
+            ~~~
+            //1번 방법 : 각 지점은 OnlineBanking클래스를 상속받아 각기 다른 방법으로 Customer를 행복하게 한다
+            public abstract class OnlineBanking {
+              //매개변수로 받은 id에 해당하는 Customer를 행복하게 해주는 메소드
+              public void processCustomer(int id) {
+                Customer c = Customer.builder().id(id).build();
+                makeCustomerHappy(c);
+              }
+              abstract void makeCustomerHappy(Customer c);
+            }
+            //2번 방법 : 각 지점은 OnlineBanking클래스를 상속받지 않고 람다표현식을 통해 직접 다양한 동작을 추가할 수 있다.
+            public class OnlineBankingLambda {
+              //
+              public void processCustomer(int id, String name, Consumer<Customer> makeCustomerHappy) {
+                Customer c = Customer.builder().id(id).name(name).build();
+                makeCustomerHappy.accept(c);
+              }
+            }
+            @Test
+            public void templateMethodTest() {
+              new OnlineBankingLambda().processCustomer(1337, "hj", (Customer c) ->
+                  log.debug("Hello {}", c.getName()));  //Hello hj
+            }
+            ~~~
+    3.  옵저버
+        -   객체에 상태 변화를 관찰하는 관찰자들을 등록하여 상태 변화가 있을 때마다 메서드 등을 통해 객체가 직접 각 옵저버에게 알리게 하는 디자인 패턴
+        -   굳이 람다표현식을 꼭 써야 좋은게 아니고 이렇게 쓸 수도 있다 알아두세요
+        -   예제 : 특정 키워드를 포함하는 트윗이 등록되면 알림을 받는 시나리오
+            -   구성 : 
+                1.  다양한 옵저버를 그룹화 하는 인터페이스 : TweetObserver 
+                2.  옵저버를 구현하는 클래스 : NYTimes, Guardian, LeMonde
+                3.  옵저버를 등록하고 옵저버에 알리는 기능을 정의한 주제 인터페이스 : Subject
+                4.  주제 인터페이스를 구현한 클래스 : Feed
+            -   코드
+                ~~~
+                @Test
+                public void observerTest() {
+                  //구현한 Observer패턴 테스트코드
+                  Feed f = new Feed();
+                  String tweet = "The queen said her favourite book is Modern Java in Action!";
+                  f.registerObserver(new NYTimes());
+                  f.registerObserver(new Guardian());
+                  f.registerObserver(new LeMonde());
+                  f.notifyObservers(tweet);
+                  //결과 : Yet more news from London... The queen said her favourite book is Modern Java in Action!
+                  //
+                  //람다표현식 사용
+                  //명시적으로 인스턴스화 하지 않고 람다 표현식을 직접 전달해서 실행할 동작을 지정할 수 있음
+                  f.registerObserver((String t) -> {
+                    if (t != null && t.contains("book")) {
+                      System.out.println("Study hard please... " + t);
+                    }
+                  });
+                  f.notifyObservers(tweet);
+                  //결과 : Study hard please... The queen said her favourite book is Modern Java in Action!
+                }
+                ~~~
+    4.  의무 체인
+        -   작업 처리 객체의 체인(동작 체인 등)을 만들 때 사용하는 패턴
+            -   한 객체가 어떤 작업을 처리한 다음 다른 객체로 결과를 전달하고, 다른 객체도 해야 할 작업을 처리한 다음 또 다른객체로 전달하는 식
+            -   일반적으로 당므으로 처리할 객체 정보를 유지하는 필드를 포한하는 추상 클래스로 패턴을 구성
+        -   예제 : 텍스트 처리
+            ~~~
+            @Test
+            public void chainOfResponsibilityPatternTest() {
+              ProcessingObject<String> p1 = new HeaderTextProcessing();
+              ProcessingObject<String> p2 = new SpellCheckerProcessing();
+              p1.setSuccessor(p2);
+              log.info("p1 result : {}", p1.handle("labdas"));  //result : header text
+              log.info("p2 result : {}", p2.handle("labdas"));  //p2 result : lambdas
+              //
+              //람다 표현식 사용
+              UnaryOperator<String> headerProcessing = (String text) -> "Header text " + text;
+              UnaryOperator<String> spellCheckerProcessing = (String text) -> text.replaceAll("labda", "lambda");
+              Function<String, String> pipeLine = headerProcessing.andThen(spellCheckerProcessing);
+              String result = pipeLine.apply("labda");
+              log.info("result : {}", result);  //result : Header text lambda
+            }
+            ~~~
+
 
 ---
 
