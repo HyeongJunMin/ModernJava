@@ -6,6 +6,9 @@
 ---
 
 ## 요약 및 결론
+자바 8의 람다와 메서드참조 기능의 추가로 DSL 개발 적합도가 얼마나 향상됐는지 보여주기 위한 챕터인듯 했다.
+
+하지만 가장 좋았던건 편하게 쓰기만 하던 메소드 체인 패턴(플루언트 스타일)이 어떻게 구성됐는지 알게된 것이다. 자바 좋다.
 
 ---
 
@@ -54,7 +57,7 @@
         2.  다른 언어의 컴파일러를 이용하거나 외부 DSL 도구를 사용할 필요 없이 자바 코드와 DSL을 한번에 컴파일 할 수 있다.
         3.  기존 자바 IDE의 자동완성 기능을 그대로 사용할 수 있다.
         4.  추가로 DSL을 쉽게 기존 코드로 합칠 수 있다. 
-2.  다중 SDL : 자바가 아니지만 JVM에서 실행됨(스칼라, 그루비 등)
+2.  다중 DSL : 자바가 아니지만 JVM에서 실행됨(스칼라, 그루비 등)
     -   JVM에서 실행되는 언어 중에 문법이 간편하고 제약이 적은 언어가 많다.
     -   Scala에서 내장DSL로 3번 Hello World를 출력하는 프로그램 구현
         -   문법적 잡음이 없음을 확인
@@ -262,11 +265,114 @@
     }
     ~~~
 ###4.  실생활의 자바8 DSL
+DSL 패턴의 장점과 단점
+-   메서드 체인 : 누가 벌써 이렇게 만들어두면 쓰기만 하는 나는 참 편하다.
+    -   장점 :
+        1.  메서드 이름이 키워드 인수 역할을 수행
+        2.  선택형 파라미터와 잘 동작한다.
+        3.  정적 메소드를 최소화하거나 없앨 수 있다.
+        4.  문법적 잡음을 최소화 한다.
+    -   단점 : 
+        1.  구현이 장황하다.
+        2.  빌드를 연결하는 접착 코드가 필요하다.
+        3.  들여쓰기 규칙으로만 도메인 객체 계층을 정의한다.
+-   중첩 함수
+    -   장점 : 
+        1.  구현의 장황함을 줄일 수 있다.
+        2.  함수 중첩으로 도메인 객체 계층을 반영한다.
+    -   단점 : 
+        1.  정적 메서드의 사용이 빈번하다.
+        2.  이름이 아닌 위치로 인수를 정의한다.
+        3.  선택형 파라미터를 처리할 메소드 오버로딩이 필요하다.
+-   람다를 이용한 함수 시퀀싱
+    -   장점 : 
+        1.  선택형 파라미터와 잘 동작한다.
+        2.  정적 메소드를 최소화하거나 없앨 수 있다.
+        3.  람다 중첩으로 도메인 객체 계층을 반영한다.
+        4.  빌더의 접착 코드가 없다.
+    -   단점 : 
+        1.  구현이 장황하다.
+        2.  람다 표현식으로 인한 문법적 잡음이 DSL에 존재한다.
 #####4.1. jOOQ
+-   SQL을 구현하는 내부적 DSL
+-   자바에 내장된 형식 안전 언어
+-   예시
+    ~~~
+    //select * from BOOK where BOOK.PUBLISHED_IN = 2006 ORDER BY BOOK.TITLE
+    create.selectFrom(BOOK)
+          .where(BOOK.PUBLISHED_IN.eq(2016))
+          .orderBy(BOOK.TITLE)
+    ~~~
 #####4.2. 큐컴버
+-   다른 BDD(Behavior-driven Development) 프레임워크와 마찬가지로 도메인 전용 스크립팅 언어 명령문을 실행할 수 있는 테스트케이스로 변환한다.
+-   큐컴버는 개발자가 비즈니스 시나리오를 평문 영어로 구현할 수 있도록 도와주는 BDD 도구
+-   예시
+    ~~~
+    //문장은 테스트 케이스의 변수를 캡쳐하는 정규 표현식으로 매칭된다.
+    //테스트 자체를 구현하는 메소드로 문장을 전달한다.
+    Feature: Buy stock
+        Senario: Buy 10 IBM stocks
+            Given the price of a "IBM" stock is 125$
+            When I buy 10 "IBM"
+            Then the order value should be 1250$
+    ~~~
+    ~~~
+    public class BuyStocksSteps {
+        //위 문장이 Given 어노테이션으로 전달되었음
+        //시나리오의 전제 조건을 정의하는 부분
+        @Given("^the price of a \"(.*?\" stock is (\\d+)\\$$")
+        public void setUnitPrice(String stockName, int unitPrice) {
+            //단가를 저장하는 세터
+        }
+    }
+    ~~~
 #####4.3. 스프링 통합(Spring Integration)
+-   의존성 주입에 기반한 스프링 프로그래밍 모델을 확장한다.
+-   목표 : 
+    1.  복잡한 엔터프라이즈 통합 솔루션을 구현하는 단순한 모델 제공
+    2.  비동기, 메시지 주도 아키텍처를 쉽게 적용할 수 있도록 도움
+-   여러 엔드포인트를 한 개 이상의 메시지 흐름으로 조합해서 통합 과정이 구성된다.
+    ~~~
+    //예제 : https://docs.spring.io/spring-integration/docs/5.1.0.M1/reference/html/java-dsl.html
+    @Configuration
+    @EnableIntegration
+    public class MyConfiguration {    
+        @Bean
+        public AtomicInteger integerSource() {
+            return new AtomicInteger();
+        }    
+        @Bean
+        public DirectChannel inputChannel() {
+            return new DirectChannel
+        }
+        @Bean
+        public IntegrationFlow myFlow() {
+            return IntegrationFlows
+                //integerSource를 integrationFlow의 입력으로 사용
+                .from(integerSource::getAndIncrement,
+                //MessageSource를 폴링하면서 MessageSource가 나르는 데이터를 가져옴
+                    c -> c.poller(Pollers.fixedRate(100)))
+                //inputChannel의 이름만 알고 있으면 모든 컴포넌트로 메시지를 전달할 수 있다.
+                .channel(inputChannel())
+                .filter((Integer p) -> p > 0)
+                //MessageSource에서 가져온 정수를 문자열로 변환
+                .transform(Object::toString)
+                .channel(MessageChannels.queue())
+                .get();
+        }
+    }
+    ~~~
 ###5. 마치며
-
+-   DSL의 주요 기능은 개발자와 도메인 전문가 사이의 간격을 좁히는 것이다.
+    -   애플리케이션의 비즈니스 로직을 구현하는 코드를 만든 사람이 프로그램이 사용될 비즈니스 필드의 전문 지식을 갖추긴 어렵다.
+    -   개발자가 아닌 사람도 이해할 수 있는 언어로 이런 비즈니스 로직을 구현할 수 있다고 해서 도메인 전문가가 프로그래머가 될 수 있는 것은 아니지만 적어도 로직을 읽고 검증하는 역할은 할 수 있다.
+    -   DSL이랑 코드랑 별 차이 없던데 왜 이런말이 써있는지 잘 모르겠다.
+-   DSL은 내부DSL, 다중DSL, 외부DSL로 구분할 수 있으며 구분 기준은 호스팅 언어를 기반으로 한 정도이다.
+-   JVM에서 이용할 수 있는 스칼라, 그루비 등 다른 언어로 다중 DSL을 개발할 수 있다.
+    -   장점 : 자바보다 유연하며 간결
+    -   단점 : 자바와 통합할 때 빌드 과정이 복잡해지며 상호 호환성 문제 발생 가능
+-   자바의 장황함과 문법적 엄격함 때문에 내부DSL 개발 언어로 적합하지 않다.
+    -   자바 8의 람다 표현식과 메서드 참조 덕분에 상황이 많이 개선되었다.
 
 
 ---
