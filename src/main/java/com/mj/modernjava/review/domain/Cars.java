@@ -1,6 +1,6 @@
 package com.mj.modernjava.review.domain;
 
-import lombok.Data;
+import lombok.*;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -8,7 +8,12 @@ import javax.persistence.Id;
 import java.util.Date;
 
 @Entity
-@Data
+@Getter
+@Setter
+@ToString
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Cars {
     @Id
     @Column(name = "carnumber")
@@ -34,4 +39,10 @@ public class Cars {
     private Date created_dt;
     private String status;
 
+    public boolean isFast() {
+        if (this.maxSpeed >= 250) {
+            return true;
+        }
+        return false;
+    }
 }
