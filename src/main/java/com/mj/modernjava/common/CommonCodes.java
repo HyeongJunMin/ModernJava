@@ -18,4 +18,11 @@ public class CommonCodes {
         public static final String YELLOW = "yellow";
         public static final String[] ALL_COLORS = {BLACK, BLUE, BROWN, GOLD, GREY, GREEN, OLIVE, PINK, PURPLE, RED, SILVER, WHITE, YELLOW};
     }
+
+    public static class CarStatus {
+        public static final String NORMAL = "normal";
+        public static final String BREAK_DOWN = "breakdown";
+        public static final String REPARING = "reparing";
+        public static final String SOLDOUT = "soldout";
+    }
 }

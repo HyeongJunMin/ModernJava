@@ -17,6 +17,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 
@@ -156,6 +157,43 @@ public class CarTest {
         collect.forEach((k, v) -> {
             System.out.println("k : " + k + " , v : " + v);
         });
+    }
+
+    @Test
+    void templateMethodTest() {
+        String carNumber = "00하3929";
+        Cars carOrigin = carsRepository.findById(carNumber).get();
+        System.out.println(carOrigin.getStatus());
+        processSaleCommon(carNumber, (Cars car) -> car.setStatus("soldout"));
+        Cars car = carsRepository.findById(carNumber).get();
+        System.out.println(car.getStatus());
+    }
+
+    @Test
+    void templateMethodTest2() {
+        String carNumber = "00하3929";
+        Cars carOrigin = carsRepository.findById(carNumber).get();
+        System.out.println(carOrigin.getStatus() + ", " + carOrigin.getColor());
+        processSaleCommon(carNumber, (Cars car) -> {
+            car.setStatus("soldout");
+            car.setColor(CommonCodes.Colors.BROWN);
+        });
+        Cars car = carsRepository.findById(carNumber).get();
+        System.out.println(car.getStatus() + ", " + carOrigin.getColor());
+    }
+
+    private void processSaleCommon(String id, Consumer<Cars> saleCar) {
+        Cars car = carsRepository.findById(id).get();
+        saleCar.accept(car);
+        carsRepository.save(car);
+    };
+
+    abstract class SaleCar {
+        public void processSale(String carnumber) {
+            Cars car = carsRepository.findById(carnumber).get();
+            saleCar(car);
+        }
+        abstract void saleCar(Cars car);
     }
 
 }
