@@ -175,7 +175,8 @@ public class CarTest {
     }
 
     @Test
-    void templateMethodTest() {
+    void saleCarTest() {
+        //문제4 기본
         String carNumber = "00하3929";
         Cars carOrigin = carsRepository.findById(carNumber).get();
         System.out.println(carOrigin.getStatus());
@@ -185,7 +186,12 @@ public class CarTest {
     }
 
     @Test
-    void templateMethodTest2() {
+    void saleCarByBehaviorParameteriationTest() {
+
+    }
+
+    @Test
+    void saleCarBytemplateMethodTest() {
         String carNumber = "00하3929";
         Cars carOrigin = carsRepository.findById(carNumber).get();
         System.out.println(carOrigin.getStatus() + ", " + carOrigin.getColor());

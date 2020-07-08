@@ -57,4 +57,9 @@ public class Cars {
     public boolean isNormal() {
         return CommonCodes.CarStatus.NORMAL.equals(this.status);
     }
+
+    @Transient
+    public static Cars saleCar(String id, SaleCar saleCar) {
+        return saleCar.saleCar(id);
+    }
 }
