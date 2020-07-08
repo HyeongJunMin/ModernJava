@@ -41,14 +41,19 @@ public class CarTest {
     @Autowired
     private MockMvc mockMvc;
 
-//    @Test
-//    void carConnectionTest() {
-//        log.info("test start");
-//        Optional<Cars> byId = carsRepository.findById("00하3929");
-//        log.info("car : {}", byId.get().toString());
-//        log.info("car number : {}", byId.get().getCarNumber());
-//        carsRepository.findAll().forEach(car -> log.info("car : {}", car));
-//    }
+    @Test
+    void carConnectionTest() {
+        log.info("test start");
+        Optional<Cars> byId = carsRepository.findById("00하3929");
+        log.info("car : {}", byId.get().toString());
+        log.info("car number : {}", byId.get().getCarNumber());
+        carsRepository.findAll().forEach(car -> log.info("car : {}", car));
+    }
+
+    @Test
+    void carFindTest() {
+        log.info("29파9439 : {}", carsRepository.findById("29파9439").toString());
+    }
 
     @Test
     void carControllerConnectionTest() throws Exception{
@@ -68,24 +73,35 @@ public class CarTest {
     }
 
     @Test
+    void calculation() {
+        Long d = 250_000_000L;
+        Long min = 250_000_000L;
+        Long max = 300_000_000L;
+        log.info("min >= d : {}", min <= d);
+        log.info("max >= d : {}", max >= d);
+        log.info("min <= d && max >= d {}", min <= d && max >= d);
+    }
+
+    @Test
     void carRecommendation() {
         //BOOK 219 PAGE
         ArrayList<Cars> cars = Lists.newArrayList(carsRepository.findAll());
         Map<String, List<Cars>> collect = cars.stream().collect(groupingBy(Cars::getModel));
-        log.info("===========");
+        log.info("=========== {}", cars.size());
         log.info("collect : {}", collect);
         log.info("===========");
         DemandVO demand = DemandVO.builder()
-                .minSpeed(250L).maxPrice(250_000_000L).minPrice(300_000_000L).recommendLimit(3).build();
+                .minSpeed(250L).minPrice(250_000_000L).maxPrice(300_000_000L).recommendLimit(3).build();
+        log.info("intervene : {}", carsRepository.findById("12허1123").get().isIntervenePrice(demand.getMinPrice(), demand.getMaxPrice()));
         log.info("test start");
+        log.info("max price : {}", demand.getMaxPrice());
+        log.info("min price : {}", demand.getMinPrice());
         carsRepository.findAll();
         Map<String, List<Cars>> carList = Lists.newArrayList(carsRepository.findAll())
                 .stream()
-//                .peek(System.out::println)
-//                .filter(Cars::isFast)
-                .filter(car -> car.getPrice() >= demand.getMinPrice() && car.getPrice() <= demand.getMaxPrice())
-//                .distinct()
-//                .limit(demand.getRecommendLimit())
+                .filter(Cars::isFast)
+                .filter(car -> car.isIntervenePrice(demand.getMinPrice(), demand.getMaxPrice()))
+                .limit(demand.getRecommendLimit())
                 .collect(groupingBy(Cars::getModel));
 
         log.info("car list size : {}", carList.size());
@@ -143,9 +159,8 @@ public class CarTest {
         modelNameSet.parallelStream().map(model -> model.toUpperCase());
         stopWatch.stop();
         System.out.println("time : " + stopWatch.getNanoTime());
-
-
     }
+
 
     @Test
     void calculateTotalSales() {
