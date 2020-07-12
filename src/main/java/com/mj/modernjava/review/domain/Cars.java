@@ -7,6 +7,7 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Transient;
+import java.io.Serializable;
 
 @Entity
 @Getter
@@ -15,7 +16,10 @@ import javax.persistence.Transient;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Cars {
+public class Cars implements Serializable {
+
+    private static final long serialVersionUID = 5364478132129145932L;
+
     @Id
     @Column(name = "carnumber")
     private String carNumber;

@@ -1,9 +1,12 @@
 package com.mj.modernjava.review.domain.vo;
 
-import lombok.Builder;
-import lombok.Data;
+import lombok.*;
 
-@Data
+@Getter
+@Setter
+@ToString
+@AllArgsConstructor
+@NoArgsConstructor
 @Builder
 public class DemandVO {
     private Long minSpeed;
