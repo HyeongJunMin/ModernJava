@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 @ToString
 @NoArgsConstructor
 @AllArgsConstructor
+//@Builder
 public class Chair {
 
     public enum Color {

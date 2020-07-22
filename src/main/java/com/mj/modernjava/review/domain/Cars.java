@@ -39,8 +39,10 @@ public class Cars implements Serializable {
     private Integer fuel;
     private Long price;
     private Integer since;
+
     @Column(name = "car_type")
     private String carType;
+
     private String created_date;
     private String status;
 

@@ -1,19 +1,18 @@
 package com.mj.modernjava.review.service;
 
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.summingLong;
+
 import com.mj.modernjava.common.CommonCodes;
 import com.mj.modernjava.review.domain.Cars;
 import com.mj.modernjava.review.domain.vo.DemandVO;
 import com.mj.modernjava.review.repository.CarsRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.StreamSupport;
-
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.summingLong;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 @Service
 public class CarsManager {
