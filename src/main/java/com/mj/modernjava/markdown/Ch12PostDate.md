@@ -7,6 +7,8 @@
 
 #### 요약 및 결론
 - Date 타입명이 참 아깝다... 지금 LocalDateTime을 Date로 바꾸면 참 좋을텐데 아쉽
+- LocalDateTime 쓰면 좋긴 할텐데 Date 클래스 쓰던곳은 apache DateUtils 써도 충분할듯..
+- timezone 부분은 확실히 편함
 ---
 
 #### 책 내용
