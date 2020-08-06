@@ -187,3 +187,21 @@ public void testParseTimeToAnotherZone() {
 
 #### apache.commons.lang3.time.DateUtils
 DateUtils 쓰면 기존에 있던 Date도 쓸만 함
+```
+@Test
+public void testDate1() {
+  // 1501513200000
+  log.debug("" + DateUtil.convertDateToString("yyyyMMdd", DateUtil.convertTimestampToDate(3586950000000L)));
+  log.debug(DateUtil.getDate().getTime() + "");
+  log.debug(DateUtil.addDays(7).getTime() + "");
+  log.debug(DateUtil.addDays(10).getTime() + "");
+}
+```
+```
+@Test
+public void testDate2() {
+  Date targetDt = new Date();
+  Date firstDateOfPrevMonth = DateUtils.getFirstDateOfMonth(targetDt, "Asia/Seoul");
+  Date endDateOfPrevMonth = DateUtils.getLastDateOfMonth(targetDt, "Asia/Seoul");
+}
+```
