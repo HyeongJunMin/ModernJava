@@ -23,6 +23,7 @@ import java.time.temporal.ChronoField;
 import java.time.temporal.TemporalAdjusters;
 import java.time.temporal.UnsupportedTemporalTypeException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -137,6 +138,7 @@ public class Ch12PostDate {
     log.info("offset info = rules : {}, toString : {}, totalSeconds : {}"
         , seoulOffset.getRules(), seoulOffset.toString(), seoulOffset.getTotalSeconds());
     // offset info = rules : ZoneRules[currentStandardOffset=+09:00], toString : +09:00, totalSeconds : 32400
+    Collections.sort(null);
   }
 
   @Test
