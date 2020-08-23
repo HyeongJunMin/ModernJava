@@ -27,7 +27,11 @@ public class Ch13DefaultMethod {
   }
   public interface DInter extends AInter { }
   public interface EInter extends AInter { }
-  public class FClass implements EInter, DInter { }
+  public static class FClass implements EInter, DInter {
+    public static void main(String[] args) {
+      log.info("result : {}", new FClass().getInt());
+    }
+  }
   public interface AInter {
     default int getInt() {
       return 10;
