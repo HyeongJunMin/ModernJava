@@ -6,8 +6,9 @@
 ---
 
 #### 요약 및 결론
-- g
----
+- 자바의 동시성 지원은 계속 진화해 가고 있는데 나는 잘 모르겠다
+- Future는 CompletableFuture 없이는 쓰면 안될거라고 생각한다. get()호출했다가 영영 안끝나면 어떡해
+- pub-sub 예제가 아주 좋다. 값셀 - 연산결과셀
 #### 책 내용
 CompletableFuture와 리액티브 프로그래밍 컨셉의 기초
 > 소프트웨어 개발 방법을 획기적으로 뒤집는 두 가지 추세        
@@ -246,4 +247,104 @@ CompletableFuture와 리액티브 프로그래밍 컨셉의 기초
         ```
 3. 박스와 채널 모델
     - 동시성 모델을 가장 잘 설계하고 개념화하기 위해 그림을 그리는 기법
-    - 
+    - 병렬성을 극대화하기 위해서는 모든 함수를 Future로 감싸는게 좋다.
+        - 많은 태스크가 Future의 get()메서드를 호출하면 데드락에 걸릴 수 있다.
+        - CompletableFuture와 Combinators를 이용해 문제를 해결할 수 있다.
+4. CompletableFuture와 콤비네이터를 이용한 동시성
+    - Future인터페이스의 문제 : 동시 코딩 작업을 Future인터페이스로 생각하도록 유도하는 점
+    - CompletableFuture는 Future들을 조합하는 기능이다.
+        - 일반적으로 Future는 실행해서 get()으로 결과를 얻을 수 있는 Callable로 만들어진다.
+        - 그러나 CompletableFuture는 실행할 코드 없이 Future를 만들 수 있도록 허용한다.
+        ```
+        @Test
+        public void cfComplete() throws ExecutionException, InterruptedException {
+          //f(x)의 실행이 끝나지 않으면 get()을 기다려야 하므로 프로세싱 자원을 낭비할 수 있다.
+          ExecutorService executorService = Executors.newFixedThreadPool(10);
+          int x = 1337;
+          CompletableFuture<Integer> completableFuture = new CompletableFuture<>();
+          executorService.submit(() -> completableFuture.complete(f(x)));
+          int b = g(x);
+          log.info("result : {}", completableFuture.get() + b); //result : 14717
+          executorService.shutdown();
+        }
+        ```
+        - CompletableFuture의 thenCombine활용
+        - cfF와 cfG의 결과를 알지 못한 상태에서 thenCombine은 두 연산이 끝났을 때 스레드 풀에서 실행된 연산을 만든다.
+        - 결과를 추가하는 세 번째 연산 cfCombine은 다른 두 작업이 끝날 때까지는 스레드에서 실행되지 않는다.
+        ~~~
+        @Test
+        public void cfCompleteWithCombine() throws ExecutionException, InterruptedException {
+          ExecutorService executorService = Executors.newFixedThreadPool(10);
+          int x = 1337;
+          CompletableFuture<Integer> cfF = new CompletableFuture<>();
+          CompletableFuture<Integer> cfG = new CompletableFuture<>();
+          CompletableFuture<Integer> cfCombine = cfF.thenCombine(cfG, (y, z) -> y + z);
+          executorService.submit(() -> cfF.complete(f(x)));
+          executorService.submit(() -> cfG.complete(g(x)));
+          log.info("result : {}", cfCombine.get()); //result : 14717
+          executorService.shutdown();
+        }
+        ~~~
+5. 발행-구독 그리고 리액티브 프로그래밍
+    0. 리액티브 프로그래밍?
+        - Future와 CompletableFuture는 독립적 실행과 병렬성이라는 정식적 모델 기반
+        - 따라서 Future는 한 번만 실행해 결과를 제공한다.
+        - 반면 리액티브 프로그래밍은 시간이 흐르면서 여러 Future같은 객체를 통해 여러 결과를 제공한다.
+        - Java9에 추가된 발행-구독 모델을 적용한 Flow API
+            1. 구독자가 있고 구독자가 구독할 수 있는 발행자가 있다.
+            2. 이 연결을 구독(subscription)이라 한다.
+            3. 이 연결을 이용해 메시지(또는 이벤트로 알려짐)를 전송한다.
+    1. 두 Flow를 합치는 예제
+        - 두 값 셀의 합을 보여주는 결과 셀을 정해두고 각 값 셀이 변화할 때 마다 결과 셀이 변화하는 기능
+        ```
+        @Test
+        public void sumFlows() {
+          SimpleCell c1 = new SimpleCell("C1");
+          SimpleCell c2 = new SimpleCell("C2");
+          ArithmeticCell c3 = new ArithmeticCell("C3");
+          c1.subscribe(c3::setLeft);
+          c2.subscribe(c3::setRight);
+          c1.onNext(10);
+          c2.onNext(20);
+          c1.onNext(15);
+          // name : C1, value : 10
+          // name : C3, value : 10
+          // name : C2, value : 20
+          // name : C3, value : 30
+          // name : C1, value : 15
+          // name : C3, value : 35
+        }
+        ```
+    2. 역압력
+        - Publisher에서 Subcriber로 정보를 전달한다.
+        - Java9에서 Flow API의 Subscriber 인터페이스는 void onSubscribe(Subcription subscription) 메서드를 포함한다.
+            - Pub - Sub 간 채널이 연결되면 첫 번째로 호출되는 메서드
+            - Subscription 객체는 Sub - Pub 간 통신할 수 있는 메서드를 포함한다.
+            ```
+            interface Subscription {
+              void cancel();
+              void request(long n);
+            }
+            ```
+        - Publisher가 Subscription 객체를 만들어 Subscriber로 전달하면 Subscriber는 이를 이용해 Publisher로 정보를 보낼 수 있다.
+    3. 실제 역압력의 간단한 형태
+        - 한 번에 한 개의 이벤트를 처리하도록 발행-구독 연결을 구성하려면 아래와 같은 작업이 필요하다.
+            1. Subscriber가 OnSubscribe로 전달된 Subscription 객체를 subscription같은 필드에 저장
+            2. Subscriber가 수 많은 이벤트를 받지 않도록 onSubscribe, onNext, onError의 마지막 동작에 chnnel.request(1)을 추가해 오직 한 이벤트만 요청한다.
+            3. 요청을 보낸 채널에만 onNext, onError이벤트를 보내도록 Publisher의 notifyAllSubscribers 코드를 바꾼다
+        - 역압력을 구현할 때 고려해야 할 점들
+            - 여러 Subscriber가 있을 때 이벤트를 가장 느린 속도로 보낼 것인가 아니면 각 Subscriber에게 보내지 않은 데이터를 저장할 별도의 큐를 가질 것인가?
+            - 큐가 너무 커지면 어떻게 할까?
+            - Subscriber가 준비가 안되었다면 큐의 데이터는 폐기할 것인가?
+            - 데이터의 성격에 따라 다름. 온도 데이터 vs 은행 계좌 크레딧 데이터
+6. 리액티브 시스템 vs 리액티브 프로그래밍
+    - 리액티브 시스템
+        - 런타임 환경이 변화에 대응하도록 전체 아키텍쳐가 설계된 프로그램을 지칭
+        - 요악하자면 반응성, 회복성, 탄력성 세 가지 속성을 갖추도록 설계된 프로그램
+            - 반응성 : 큰 작업을 처리하느라 간단한 질의의 응답을 지연하는 일 없이 실시간으로 입력에 반응하는 것
+            - 회복성 : 한 컴포넌트의 실패가 전체 시스템의 실패로 연결되지 않음을 의미
+            - 탄력성 : 자신의 작업 부하에 맞게 적응하며 작업을 효율적으로 처리함을 의미
+    - 리액티브 프로그래밍
+        - Java9 Flow 관련 자바 인터페이스에서 제공하는 형식
+        - 리액티브 시스템을 구성하는 방법 중 하나
+        - 메시지 주도(message-driven) 속성을 반영

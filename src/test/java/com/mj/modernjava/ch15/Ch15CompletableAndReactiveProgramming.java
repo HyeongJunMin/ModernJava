@@ -1,5 +1,6 @@
 package com.mj.modernjava.ch15;
 
+import java.util.concurrent.CompletableFuture;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -79,5 +80,48 @@ public class Ch15CompletableAndReactiveProgramming {
   private void g(int x, IntConsumer dealWithResult) {
     log.info("reactive programming");
     dealWithResult.accept(Functions.g(x));
+  }
+
+  @Test
+  public void cfComplete() throws ExecutionException, InterruptedException {
+    //f(x)의 실행이 끝나지 않으면 get()을 기다려야 하므로 프로세싱 자원을 낭비할 수 있다.
+    ExecutorService executorService = Executors.newFixedThreadPool(10);
+    int x = 1337;
+    CompletableFuture<Integer> completableFuture = new CompletableFuture<>();
+    executorService.submit(() -> completableFuture.complete(f(x)));
+    int b = g(x);
+    log.info("result : {}", completableFuture.get() + b); //result : 14717
+    executorService.shutdown();
+  }
+
+  @Test
+  public void cfCompleteWithCombine() throws ExecutionException, InterruptedException {
+    ExecutorService executorService = Executors.newFixedThreadPool(10);
+    int x = 1337;
+    CompletableFuture<Integer> cfF = new CompletableFuture<>();
+    CompletableFuture<Integer> cfG = new CompletableFuture<>();
+    CompletableFuture<Integer> cfCombine = cfF.thenCombine(cfG, (y, z) -> y + z);
+    executorService.submit(() -> cfF.complete(f(x)));
+    executorService.submit(() -> cfG.complete(g(x)));
+    log.info("result : {}", cfCombine.get()); //result : 14717
+    executorService.shutdown();
+  }
+
+  @Test
+  public void sumFlows() {
+    SimpleCell c1 = new SimpleCell("C1");
+    SimpleCell c2 = new SimpleCell("C2");
+    ArithmeticCell c3 = new ArithmeticCell("C3");
+    c1.subscribe(c3::setLeft);
+    c2.subscribe(c3::setRight);
+    c1.onNext(10);
+    c2.onNext(20);
+    c1.onNext(15);
+    // name : C1, value : 10
+    // name : C3, value : 10
+    // name : C2, value : 20
+    // name : C3, value : 30
+    // name : C1, value : 15
+    // name : C3, value : 35
   }
 }
