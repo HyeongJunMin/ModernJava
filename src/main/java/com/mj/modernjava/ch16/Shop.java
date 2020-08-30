@@ -1,11 +1,10 @@
 package com.mj.modernjava.ch16;
 
-import static com.mj.modernjava.ch16.Util.delay;
-import static com.mj.modernjava.ch16.Util.format;
-
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
+
+import static com.mj.modernjava.ch16.Util.*;
 
 public class Shop {
 
@@ -19,6 +18,12 @@ public class Shop {
 
   public String getPrice(String product) {
     double price = calculatePrice(product);
+    Discount.Code code = Discount.Code.values()[random.nextInt(Discount.Code.values().length)];
+    return name + ":" + price + ":" + code;
+  }
+
+  public String getPriceRandomDelayed(String product) {
+    double price = calculatePriceRandomDelayed(product);
     Discount.Code code = Discount.Code.values()[random.nextInt(Discount.Code.values().length)];
     return name + ":" + price + ":" + code;
   }
@@ -39,6 +44,11 @@ public class Shop {
 
   public double calculatePrice(String product) {
     delay();
+    return format(random.nextDouble() * product.charAt(0) + product.charAt(1));
+  }
+
+  public double calculatePriceRandomDelayed(String product) {
+    randomDelay();
     return format(random.nextDouble() * product.charAt(0) + product.charAt(1));
   }
 

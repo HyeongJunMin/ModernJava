@@ -1,15 +1,11 @@
 package com.mj.modernjava.ch15;
 
-import java.util.concurrent.CompletableFuture;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
 import java.util.function.IntConsumer;
 
 @Slf4j
@@ -124,4 +120,5 @@ public class Ch15CompletableAndReactiveProgramming {
     // name : C1, value : 15
     // name : C3, value : 35
   }
+
 }

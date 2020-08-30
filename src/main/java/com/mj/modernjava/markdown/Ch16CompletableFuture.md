@@ -6,7 +6,8 @@
 ---
 
 #### 요약 및 결론
-- 자바
+- 예제가 재미있었다
+- Async만 알았던 비동기.. 쉽지않다
 #### 책 내용
 1. Future의 단순 활용
     - Java5부터 생긴 Future
@@ -221,8 +222,92 @@
             - Async 버전이 존재한다.
             - thenCombineAsync 메서드에서는 BiFunction이 정의하는 조합 동작이 스레드풀로 제출되면서 별도의 태스크에서 비동기적으로 수행된다. 
     5. Future의 리플렉션과 CompletableFuture의 리플렉션
+        - CompletableFuture는 람다 표현식을 사용한다
+            - 다양한 동기 태스크, 비동기 태스크를 활용해서 복잡한 연산 수행 방법을 효과적으로 쉽게 정의할 수 있는 선언형 API를 만들 수 있다.
     6. 타임아웃 효과적으로 사용하기(Java9)
+        - Future의 계산 결과를 읽을 때는 무한정 기다리는 상황이 발생할 수 있으므로 블록을 하지 않는 것이 좋다.
+        - Java9에 추가된 메서드를 활용해서 문제를 해결할 수 있다.
+        - orTimeout : Future가 3초 후에도 작업을 못끝내면 TimeoutException 발생
+        - completeOnTimeout : 1초 안에 작업이 끝나지 않으면 ExchangeService.DEFAULT_RATE을 사용
+        ```
+        @Test
+        public void orTimeOut() {
+          long start = System.nanoTime();
+          findPricesInUSD("myPhone24").forEach(price -> log.info("price : {}", price));
+          long duration = (System.nanoTime() - start) / 1_000_000;
+          log.info("time : {}", duration);
+        }
+        private List<String> findPricesInUSD(String product) {
+          shops.forEach(shop -> {
+            // 아래 CompletableFuture::join와 호환되도록 futurePriceInUSD의 형식만 CompletableFuture로 바꿈.
+            CompletableFuture<Double> futurePriceInUSD =
+                    CompletableFuture.supplyAsync(() -> shop.getPrice(product))
+                            .thenCombine(
+                                    CompletableFuture.supplyAsync(
+                                            () ->  ExchangeService.getRate(ExchangeService.Money.EUR, ExchangeService.Money.USD))
+                                            // 자바 9에 추가된 타임아웃 관리 기능
+                                            .completeOnTimeout(ExchangeService.DEFAULT_RATE, 1, TimeUnit.SECONDS),
+                                    (price, rate) -> price * rate
+                            )
+                            // 자바 9에 추가된 타임아웃 관리 기능
+                            .orTimeout(3, TimeUnit.SECONDS);
+            priceFutures.add(futurePriceInUSD);
+          });
+        }
+        ```
 5. CompletableFuture의 종료에 대응하는 방법
+    - 지금까지 예제에서 응답 지연은 1초로 고정시켰지만 실제 기능들은 그렇지 않을 가능성이 높다
+    - 0.5초 ~ 2.5초 사이로 응답시간을 랜덤하게 설정한다.
     1. 최저가격 검색 애플리케이션 리팩터링
+        - 먼저 모든 가격 정보를 포함할 때까지 리스트 생성을 기다리지 않도록 프로그램을 고쳐야 한다.
+        - 그러려면 CompletableFuture의 스트림을 직접 제어해야 한다.
+        ```
+        @Test
+        public void findPricesStream() {
+          long start = System.nanoTime();
+          findPricesStream("myPhone").map(f -> f.thenAccept(System.out::println));
+          long duration = (System.nanoTime() - start) / 1_000_000;
+          log.info("time : {}", duration);
+          // shop size == 11 : 4ms
+          CompletableFuture[] futures = findPricesStream("myPhone").map(f -> f.thenAccept(System.out::println)).toArray(size -> new CompletableFuture[size]);
+          CompletableFuture.allOf(futures).join();
+        }
+        private Stream<CompletableFuture<String>> findPricesStream(String product) {
+          return shops.stream()
+                  .map(shop -> CompletableFuture.supplyAsync(() -> shop.getPriceRandomDelayed(product), executor))
+                  .map(future -> future.thenApply(Quote::parse))
+                  .map(future -> future.thenCompose(quote -> CompletableFuture.supplyAsync(() -> Discount.applyDiscount(quote), executor)));
+        }
+        ```
+        - thenAccept : 연산 결과를 소비하는 Consumer를 인수로 받음
+        - thenAcceptAsync : CompletableFuture가 완료된 스레드가 아니라 새로운 스레드를 이용해서 Consumer를 실행한다.
+        - allOf : 배열을 받아서 CompletableFuture<Void>를 반환한다.
+            - 원래 스트림의 모든 CompletableFuture의 실행 완료를 기다릴 수 있다.
     2. 응용
+        - 위 예제에 각각 상점마다 수행시간을 확인
+        ```
+        @Test
+        public void findPricesStreamApply() {
+          long start = System.nanoTime();
+          CompletableFuture[] futures = findPricesStream("myPhone")
+                  .map(f -> f.thenAccept(s -> log.info("{} done in {} msecs", s, (System.nanoTime() - start) / 1_000_000)))
+                  .toArray(size -> new CompletableFuture[size]);
+          long duration = (System.nanoTime() - start) / 1_000_000;
+          CompletableFuture.allOf(futures).join();
+          log.info("All shops have now responded in : {}", duration);
+          // MyFavoriteShop7 price is 192.72 done in 1579 msecs
+          // MyFavoriteShop2 price is 192.72 done in 1993 msecs
+          // MyFavoriteShop4 price is 192.72 done in 2036 msecs
+          // MyFavoriteShop6 price is 192.72 done in 2264 msecs
+          // MyFavoriteShop1 price is 192.72 done in 2399 msecs
+          // MyFavoriteShop0 price is 192.72 done in 2598 msecs
+          // BuyItAll price is 184.74 done in 2623 msecs
+          // BestPrice price is 110.93 done in 2907 msecs
+          // LetsSaveBig price is 135.58 done in 3060 msecs
+          // MyFavoriteShop5 price is 192.72 done in 3307 msecs
+          // MyFavoriteShop3 price is 192.72 done in 3503 msecs
+          // All shops have now responded in : 35
+        }
+        ```
 6. 로드맵
+    - 다음 17장에서는 CompletableFuture의 기능이 한 번에 종료되지 않고 일련의 값을 생산하도록 일반화하는 Java9 플로 API를 살펴본다.
