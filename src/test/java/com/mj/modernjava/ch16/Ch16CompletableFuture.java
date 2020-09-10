@@ -180,7 +180,6 @@ public class Ch16CompletableFuture {
 //                                      .completeOnTimeout(ExchangeService.DEFAULT_RATE, 1, TimeUnit.SECONDS),
 //                              (price, rate) -> price * rate
 //                      )
-//                      // 자바 9에 추가된 타임아웃 관리 기능
 //                      .orTimeout(3, TimeUnit.SECONDS);
 //      priceFutures.add(futurePriceInUSD);
 //    });
