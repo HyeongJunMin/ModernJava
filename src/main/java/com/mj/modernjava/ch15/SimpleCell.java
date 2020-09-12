@@ -25,4 +25,19 @@ public class SimpleCell implements Publisher<Integer>, Subscriber<Integer>{
     log.info("name : {}, value : {}", this.name, this.value);
     notifyAllSubscribers();
   }
+
+  @Override
+  public void onSubscribe(Subscription subscription) {
+
+  }
+
+  @Override
+  public void onError(Throwable throwable) {
+
+  }
+
+  @Override
+  public void onComplete() {
+
+  }
 }
