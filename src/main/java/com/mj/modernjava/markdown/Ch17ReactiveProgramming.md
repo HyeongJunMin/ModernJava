@@ -110,6 +110,7 @@
         - TempSubscription : 온도를 전송한다.
         - TempSubscriber : 각 도시에 설치된 센서에서 보고한 온도 스트림을 출력
     - 예제 코드
+        - Publisher가 Subscription을 만들어서 Subscriber에게 전달
         ```java
         // 현재 보고된 온도를 전달하는 자바 빈
         @Getter
