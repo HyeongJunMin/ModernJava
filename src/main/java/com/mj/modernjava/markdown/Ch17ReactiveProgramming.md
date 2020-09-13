@@ -7,7 +7,9 @@
 
 ## 요약 및 결론
 - Flow API는 Akka, RxJava등의 리액티브 라이브러리를 이용해 개발된 리액티브 애플리케이션 간 공용어를 제시하는 역할을 한다.
-- 
+- Flow API를 만들 당시 이미 Akka, RxJava 등의 라이브러리가 이미 존재했기 때문에 Flow를 구현한 클래스를 제공하지 않는다.
+- 얼마나 효과가 좋은 프로그래밍 방법인지 알 수 없다.
+- 리액티브 프로그래밍이 실제로 사용된 곳 : MS의 엑셀, WebFlux
 ## 책 내용
 > 리액티브 프로그래밍 패러다임의 중요성이 증가하는 이유
 > 1. 빅테이터 : 페타 바이트 단위의 큰 데이터를 처리할 필요성이 생김
@@ -87,7 +89,7 @@
         onSubscribe onNext* (onError | onComplete)
         ```
         - Subscription : 발행과 소비 과정을 관리(역압력 포함)
-        - Processor : 이벤트의 단계를 나타냄
+        - Processor : 이벤트의 단계를 나타내고 Subscriber이며 동시에 Publisher이다.
     - 인터페이스 간 규칙 요약
         ```
         1. Publisher는 반드시 Subscription의 request 메서드에 정의된 개수 이하의 요소만 Subscriber에 전달해야 한다.
@@ -132,22 +134,27 @@
         // Subscriber에게 TempInfo 스트림을 전송하는 Subscription
         @AllArgsConstructor
         public class TempSubscription implements Subscription {
+          // request메서드가 TempSubscription자신에게 또 다른 요소를 보내는 재귀호출을 방지하기 위해 스레드 컨트롤
+          // 예제에서는 Subscriber의 onError가 예외를 발생시키기 때문에 없어도 됨
+          private static final ExecutorService executor = Executors.newSingleThreadExecutor();
           private final Subscriber<? super TempInfo> subscriber;
           private final String town;
           @Override
           public void request(long n) {
-            for (long i = 0L; i < n; i++) { //Subscriber가 만든 요청을 한 개씩 반복
-              try {
-                subscriber.onNext(TempInfo.fetch(town));
-              } catch (Exception e) {
-                subscriber.onError(e);  //온도 가져오기 실패하면 Subscriber로 에러 전달
-                break;
+            executor.submit(() -> { // 다른 스레드에서 다음 요소를 구독자에게 보냄
+              for (long i = 0L; i < n; i++) { //Subscriber가 만든 요청을 한 개씩 반복
+                try {
+                  subscriber.onNext(TempInfo.fetch(town));
+                } catch (Exception e) {
+                  subscriber.onError(e);  //온도 가져오기 실패하면 Subscriber로 에러 전달
+                  break;
+                }
               }
-            }
+            });
           }
           @Override
           public void cancel() {
-            subscriber.onComplete();  //구독 취소되면 완료신호를 Subscriber로 전달  
+            subscriber.onComplete();  //구독 취소되면 완료신호를 Subscriber로 전달
           }
         }
         ```
@@ -188,6 +195,15 @@
               // temperature info : TempInfo(town=New York, temp=24)
               // temperature info : TempInfo(town=New York, temp=19)
               // temperature fetch error : Temperature Fetch Error!
+              //
+              // getTemperatures의 람다식을 익명클래스로 풀어쓰면 아래처럼
+              // String town = "London";
+              // Publisher pub = new Publisher() {
+              //   public void subscribe(Subscriber subscriber) {
+              //     subscriber.onSubscribe(new TempSubscription(subscriber, town));
+              //   }
+              // };
+              // pub.subscribe(new TempSubscriber());
             }
             // 리액티브 애플리케이션이 동작할 수 있도록 만든 Publisher      
             private static Publisher<TempInfo> getTemperatures(String town) {
@@ -197,5 +213,148 @@
             }
         }
         ```
+    - Processor로 데이터 변환하기
+        - Publisher를 구독한 다음 수신한 데이터를 가공해 다시 제공하는 것이 목적
+        - 화씨로 제공된 데이터를 섭씨로 변환해 다시 방출하는 예제
+            ```java
+            public class TempProcessor implements Processor<TempInfo, TempInfo> {
+              private Subscriber<? super TempInfo> subscriber;
+              @Override
+              public void subscribe(Subscriber<? super TempInfo> subscriber) {
+                this.subscriber = subscriber;    
+              }
+              @Override
+              public void onNext(TempInfo tempInfo) {
+                // 온도를 섭씨로 변환한 값으로 TempInfo를 만들어 다시 전송
+                subscriber.onNext(new TempInfo(tempInfo.getTown(), (tempInfo.getTemp() - 32) * 5 / 9));
+              }
+              // 다른 모든 신호는 업스트림 구독자에게 전달
+              @Override
+              public void onSubscribe(Subscription subscription) { subscriber.onSubscribe(subscription); }
+              @Override
+              public void onError(Throwable throwable) { subscriber.onError(throwable); }
+              @Override
+              public void onComplete() { subscriber.onComplete(); }
+            }
+            ```
+            ```java
+            public class Ch17ReactiveProgramming {
+              @Test
+              void subscribeWithProcessor() {
+                getCelsiusTemperature("Hanoi").subscribe(new TempSubscriber());
+                // temperature info : TempInfo(town=Hanoi, temp=26)
+                // temperature info : TempInfo(town=Hanoi, temp=-7)
+                // temperature info : TempInfo(town=Hanoi, temp=13)
+                // temperature fetch error : Temperature Fetch Error!
+              }
+              private static Publisher<TempInfo> getCelsiusTemperature(String town) {
+                return subscriber -> {
+                  // Processor를 만들어서 Subscribe와 Publisher 사이에 연결
+                  TempProcessor processor = new TempProcessor();
+                  processor.subscribe(subscriber);
+                  processor.onSubscribe(new TempSubscription(processor, town));
+                };
+              }
+            }
+            ```
+    - 자바는 왜 플로 API 구현을 제공하지 않는가?
+        - Flow API를 만들 당시 이미 Akka, RxJava 등의 라이브러리가 이미 존재했기 때문에 Flow를 구현한 클래스를 제공하지 않는다.
+        - Java 9 표준화 과정 덕분에 다양한 라이브러리가 쉽게 협력할 수 있게 됐다.
 ### 3. 리액티브 라이브러리 RxJava 사용하기
+- io.reactivex
+    - RxJava는 일부 이벤트에는 역압력을 적용하지 말 것을 권장한다.
+        1. 천 개 이하의 요소를 가진 스트림, 마우스의 움직임, 터치 이벤트 등 역압력을 적용하기 힘든 GUI 이벤트
+        2. 자주 발생하지 않는 종류의 이벤트
+    - 구성
+        1. Publisher와 동일한 ObservableSource를 구현한 Observable, Flowable
+        2. Subscriber와 동일한 Observer, 유사한 Emitter
+        3. Subscription은 Disposable로 대체
+1. Observable 만들고 사용하기
+    - Observer 인터페이스
+        - Java9 Subscriber보다 유연하다.
+        - onNext메서드만 사용해서 Observable을 구독할 수 있다.
+    - 예제 : 사용자에게 팩토리 메서드를 제공해 매 초마다 온도를 방출하는 Observable 반환
+        ```java
+        @Slf4j
+        public class TempObserver implements Observer<TempInfo> {
+          @Override
+          public void onSubscribe(@NonNull Disposable disposable) { }
+          @Override
+          public void onNext(@NonNull TempInfo tempInfo) { log.info("tempinfo : {}", tempInfo); }
+          @Override
+          public void onError(@NonNull Throwable throwable) { log.error("got problem : {}", throwable.getMessage()); }
+          @Override
+          public void onComplete() { log.info("done!"); }
+        }
+        ```
+        ```java
+        @Slf4j
+        public class Ch17ReactiveProgramming {
+          @Test
+          void observableCustom() {
+            getTemperature("HongKong").blockingSubscribe(new TempObserver());
+          }
+          private static Observable<TempInfo> getTemperature(String town) {
+            return Observable.create(emitter -> // Observer를 소비하는 함수로부터 Observable 만들기
+                    Observable.interval(1, TimeUnit.SECONDS) // 매 초마다 무한으로 증가하는 long값을 방출하는 Observable
+                      .subscribe(i -> {
+                        if(!emitter.isDisposed()) { // 소비된 Observer가 아직 폐기되지 않았으면 작업 수행
+                          if (i >= 5) { // 5번 온도보고했으면
+                            emitter.onComplete(); // 옵저버를 완료하고 스트림 종료
+                          } else {
+                            try {
+                              emitter.onNext(TempInfo.fetch(town)); // 아니면 온도를 보고
+                            } catch (Exception e) {
+                              emitter.onError(e); // 에러 발생하면 Observer에 알림
+                            }
+                          }
+                        }
+                    })
+            );
+          }
+        }
+        ```
+2. Observable을 변환하고 합치기.
+    - Java9 Flow API에 비해 RxJava 등의 라이브러리는 스트림을 조작하기 쉬운 것이 장점이다.
+        - 스트림을 합치고, 만들고, 거르는 등
+    - 마블 다이어그램 : 리액티브 스트림을 시각적으로 쉽게 표현한 다이어그램
+    - RxJava map, filter를 이용한 예제
+        - Java Stream에서 제공하는 기능들이 있어서 사용하기 편리하겠다.
+        ```java
+        @Slf4j
+        public class Ch17ReactiveProgramming {
+          
+          ...중복 생략...
+      
+          @Test
+          void observableMap() {
+            getCelsiusTemperatureInRxJava("Berlin").blockingSubscribe(new TempObserver());
+            // tempinfo : TempInfo(town=Berlin, temp=4)
+            // tempinfo : TempInfo(town=Berlin, temp=16)
+            // tempinfo : TempInfo(town=Berlin, temp=22)
+            // got problem : Temperature Fetch Error!
+            getCelsiusTemperaturesInRxJava("Seoul", "Busan", "Incheon").blockingSubscribe(new TempObserver());
+            // tempinfo : TempInfo(town=Incheon, temp=1)
+            // tempinfo : TempInfo(town=Seoul, temp=-3)
+            // tempinfo : TempInfo(town=Busan, temp=19)
+            // tempinfo : TempInfo(town=Busan, temp=-5)
+            // tempinfo : TempInfo(town=Seoul, temp=14)
+            // got problem : Temperature Fetch Error!
+          }
+          private Observable<TempInfo> getCelsiusTemperatureInRxJava(String town) {
+            return getTemperature(town)
+                    .filter(tempInfo -> tempInfo.getTemp() > 0)
+                    .map(temp -> new TempInfo(temp.getTown(), (temp.getTemp() - 32) * 5 / 9));
+          }
+          private Observable<TempInfo> getCelsiusTemperaturesInRxJava(String... towns) {
+            return Observable.merge(Arrays.stream(towns)
+                    .map(TempObservable::getCelsiusTemperature)
+                    .collect(toList()));
+          }
+        }
+        ```
 ### 4. 마치며
+- 데이터 처리량이 늘고 사용자 기대치가 달라지면서 인기를 얻고 있다.
+- 반응성, 회복성, 탄력성, 메시지 주도
+- 리액티브 스트림은 비동기적으로 처리되므로 역압력 기법이 기본적으로 탑재되어 있다.
+- 역압력은 발행자가 구독자보다 빠른 속도로 아이템을 발행함으로써 발생하는 문제를 방지한다.
