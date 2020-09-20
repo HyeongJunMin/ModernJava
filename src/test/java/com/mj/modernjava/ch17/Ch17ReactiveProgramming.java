@@ -1,15 +1,13 @@
 package com.mj.modernjava.ch17;
 
-import com.mj.modernjava.ch15.Publisher;
-import com.mj.modernjava.ch15.Subscriber;
-import io.reactivex.Observable;
-import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.Test;
+import static java.util.stream.Collectors.toList;
 
+import com.mj.modernjava.ch15.Publisher;
+import io.reactivex.Observable;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
-
-import static java.util.stream.Collectors.toList;
+import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.Test;
 
 @Slf4j
 public class Ch17ReactiveProgramming {
@@ -20,13 +18,13 @@ public class Ch17ReactiveProgramming {
     // temperature info : TempInfo(town=New York, temp=24)
     // temperature info : TempInfo(town=New York, temp=19)
     // temperature fetch error : Temperature Fetch Error!
-    String town = "London";
-    Publisher pub = new Publisher() {
-      public void subscribe(Subscriber subscriber) {
-        subscriber.onSubscribe(new TempSubscription(subscriber, town));
-      }
-    };
-    pub.subscribe(new TempSubscriber());
+//    String town = "London";
+//    Publisher pub = new Publisher() {
+//      public void subscribe(Subscriber subscriber) {
+//        subscriber.onSubscribe(new TempSubscription(subscriber, town));
+//      }
+//    };
+//    pub.subscribe(new TempSubscriber());
   }
   private static Publisher<TempInfo> getTemperatures(String town) {
     return subscriber -> subscriber.onSubscribe(
