@@ -309,21 +309,154 @@
         - 자료구조에 값 뿐만 아니라 함수를 저장할 수 있다.
         - 자료구조를 만드는 시점이 아니라 요청 시점에 실행할 수 있다.
         - 명확히 성능이 어떠한지는 파악하지 않았지만 좋을 것으로 예상 된다.
+        - 상황에 맞게 사용해야 한다.
 ### 4. 패턴 매칭
-> 스
+> 함수형 프로그래밍을 구분하는 중요한 특징
+> 거의 모든 함수형 프로그래밍 언어에서는 제공하지만, 자바에서는 지원하지 않는 기능
 1. 방문자 디자인 패턴
+    - 방문자 디자인 패턴으로 자료형을 언랩할 수 있다.
+    - 지정된 데이터 형식의 인스턴스를 인풋으로 받아 인스턴스의 모든 멤버에 접근한다.
+    - 자바로 되는데?
+    - 데이터 구조와 연산을 분리
+        - 데이터 구조를 변경하지 않으면서 새로운 연산이 쉬움
+        - 만약 새로운 연산(Directory, File외 무언가)을 추가하려면 새로운 visit() 메서드를 구현
+    ```java
+    @Slf4j
+    public class Ch19FunctionalProgrammingAdv {
+      @Test
+      public void visitorPattern() {
+        Directory root = new Directory("root");
+        Directory bin = new Directory("bin");
+        Directory share = new Directory("share");
+        File conf = new File("conf");
+        File readme = new File("readme");
+        File img = new File("img");
+        File img2 = new File("img2");
+        root.add(conf);
+        bin.add(readme);
+        root.add(bin);
+        share.add(img);
+        share.add(img2);
+        root.add(share);
+        root.accept(new ViewVisitor());
+        // /root
+        // /root/conf
+        // /root/bin
+        // /root/bin/readme
+        // /root/bin/share
+        // /root/bin/share/img
+        // /root/bin/share/img2
+      }
+    }
+    ```
 2. 패턴 매칭의 힘
-
-```
-@Sl
-```
-- 재귀 메
+    - 쉬운 방법의 switch문
+    - 자바8 람다로 비슷한 코드 만들기 가능... 진짜 복잡
+    ```java
+    public class PatternMatching {
+      public static Expr simplify(Expr e) {
+        TriFunction<String, Expr, Expr, Expr> binOperCase =
+            (operator, left, right) -> {
+              if ("+".equals(operator)) {
+                if (left instanceof Number && ((Number)left).val == 0) {
+                  return right;
+                }
+                if (right instanceof Number && ((Number)right).val == 0) {
+                  return right;
+                }
+              }
+              if ("*".equals(operator)) {
+                if (left instanceof Number && ((Number)left).val == 0) {
+                  return right;
+                }
+                if (right instanceof Number && ((Number)right).val == 0) {
+                  return right;
+                }
+              }
+              return new BinOp(operator, left, right);
+            };
+        Function<Integer, Expr> numCase = val -> new Number(val); // 숫자 처리
+        Supplier defaultCase = () -> new Number(0); // 수식을 인식할 수 없을 때 기본처리
+        return patternMatchExpr(e, binOperCase, numCase, defaultCase);
+      }
+    }
+    ```
 
 ### 5. 기타 정보
-> 스
+> 함수형, 참조 투명성
 1. 캐싱 또는 기억화
+    - 기억화는 메서드에 래퍼로 캐시를 추가하는 기법
+    - 래퍼가 호출되면 캐시에 존재하는지 먼저 확인하고 있으면 리턴, 없으면 계산
+    - 다수의 호출자가 공유하는 자료구조를 갱신하기 때문에 순수 함수형 해결방식은 아니다
+    - 그러나 감싼 버전의 코드는 참조 투명성을 유지할 수 있다.
+    ```java
+    @Slf4j
+    public class Ch19FunctionalProgrammingAdv {
+      @Test
+      public void cachingMemorization() {
+        Integer result1 = computeNumberOfNodesUsingCache("1");
+        log.info("result 1 :{}", result1);
+        Integer result2 = computeNumberOfNodesUsingCache("1");
+        log.info("result 2 :{}", result2);
+      }
+      private static final Map<String, Integer> numberOfNodes = new HashMap();
+      Integer computeNumberOfNodesUsingCache(String id) {
+        Integer result = numberOfNodes.get(id);
+        if (result != null) {
+          return result;
+        }
+        result = compute();
+        numberOfNodes.put(id, result);
+        return result;
+      }
+      private static Integer compute() {
+        try {
+          Thread.sleep(1000L);
+        } catch (Exception e) {
+    
+        }
+        return 10;
+      }
+    }
+    ```
 2. '같은 객체를 반환함'은 무엇을 의미하는가?
+    - 참조 투명성이란 ‘인수가 같다면 결과도 같아야 한다’는 규칙을 만족함을 의미한다.
+    - 트리예제에서 fupdate는 서로 다른 참조이지만 구조적인 값이 같으므로 fupdate는 참조 투명성을 갖는다고 이야기할 수 있다.
 3. 콤비네이터
-
+    - 함수형 프로그래밍에서는 두 함수를 인수로 받아 다른 함수를 반환하는 등 함수를 조합하는 고차원 함수를 많이 사용하게 된다.
+    - 함수를 조합하는 기능을 콤비네이터라고 한다.
+    - 함수 조합 예시
+    ```java
+    @Slf4j
+    public class Ch19FunctionalProgrammingAdv {
+      @Test
+      public void combineFunctionsTest() {
+        Integer result = Combinators
+            // x -> (2 * (2 * (2 * x) ) ) 또는 x -> 8*x
+            .repeat(3, (Integer x) -> 2 * x)
+            .apply(10);
+        log.info("result :{}", result);
+      }
+    }
+    public class Combinators {
+      // 함수 f와 g를 인수로 받아 f의 기능을 적용한 다음 g의 기능을 적용하는 함수를 반환
+      public static <A, B, C> Function<A, C> compose(Function<B, C> g, Function<A, B> f) {
+        return x -> g.apply(f.apply(x));
+      }
+      // f에 연속적으로 n번 적용
+      public static <A> Function<A, A> repeat(int n, Function<A, A> f) {
+        return n == 0 ? x -> x : compose(f, repeat(n - 1, f));
+      }
+    }
+    ```
 ### 6. 마치며
-- 공유
+- 일급 함수란 인수로 전달하거나, 결과로 반환하거나, 자료구조에 저장할 수 있는 함수다.(Function<T>)
+- 고차원 함수란 한 개 이상의 함수를 인수로 받아서 다른 함수를 반환하는 함수이다.
+- 커링은 함수를 모듈화하고 코드를 재사용할 수 있도록 지원하는 기법이다
+    - 고차원 함수를 만드는 기법이다?
+- 영속 자료구조는 갱신될 때 기존버전의 자신을 보존하므로 별도의 복사과정이 필요하지 않다
+- 게으른 리스트는 자바 스트림보다 비쌈
+- 패턴 매칭은 자료형을 언랩하는 함수형 기능이다. 자바의 switch문을 일반화 할 수 있다.
+- 참조 투명성을 유지하는 상황에서는 계산 결과를 캐시할 수 있다.
+    - 참조 투명성 : ‘인수가 같다면 결과도 같아야 한다’
+- 콤비네이터는 둘 이상의 함수나 자료구조를 조합하는 함수형 개념이다.

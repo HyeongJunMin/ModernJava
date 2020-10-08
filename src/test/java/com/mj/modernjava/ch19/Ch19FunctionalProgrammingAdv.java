@@ -1,5 +1,7 @@
 package com.mj.modernjava.ch19;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.DoubleUnaryOperator;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -9,16 +11,13 @@ import org.junit.jupiter.api.Test;
 
 @Slf4j
 public class Ch19FunctionalProgrammingAdv {
-  
   public class ConversionFactors {
     public static final double KM_TO_MILE = 0.6214;
     public static final double CELSIUS_TO_FAHRENHEIT = 0.6214;
   }
-
   public class BaselineAdjustmentFactors {
     public static final double CELSIUS_TO_FAHRENHEIT = 32;
   }
-
   @Test
   public void curring() {
     double kiloMeter = 100;
@@ -121,5 +120,65 @@ public class Ch19FunctionalProgrammingAdv {
     // 1 :2
     // 2 :3
     // 3 :5
+  }
+
+  @Test
+  public void visitorPattern() {
+    Directory root = new Directory("root");
+    Directory bin = new Directory("bin");
+    Directory share = new Directory("share");
+    File conf = new File("conf");
+    File readme = new File("readme");
+    File img = new File("img");
+    File img2 = new File("img2");
+    root.add(conf);
+    bin.add(readme);
+    root.add(bin);
+    share.add(img);
+    share.add(img2);
+    root.add(share);
+    root.accept(new ViewVisitor());
+    // /root
+    // /root/conf
+    // /root/bin
+    // /root/bin/readme
+    // /root/bin/share
+    // /root/bin/share/img
+    // /root/bin/share/img2
+  }
+
+  @Test
+  public void cachingMemorization() {
+    Integer result1 = computeNumberOfNodesUsingCache("1");
+    log.info("result 1 :{}", result1);
+    Integer result2 = computeNumberOfNodesUsingCache("1");
+    log.info("result 2 :{}", result2);
+  }
+  private static final Map<String, Integer> numberOfNodes = new HashMap();
+  Integer computeNumberOfNodesUsingCache(String id) {
+    Integer result = numberOfNodes.get(id);
+    if (result != null) {
+      return result;
+    }
+    result = compute();
+    numberOfNodes.put(id, result);
+    return result;
+  }
+  private static Integer compute() {
+    try {
+      Thread.sleep(1000L);
+    } catch (Exception e) {
+
+    }
+    return 10;
+  }
+
+  @Test
+  public void combineFunctionsTest() {
+    Integer result = Combinators
+        // x -> (2 * (2 * (2 * x) ) ) 또는 x -> 8*x
+        .repeat(3, (Integer x) -> 2 * x)
+        .apply(10);
+    log.info("result :{}", result);
   }
 }
