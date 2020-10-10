@@ -10,11 +10,19 @@ import lombok.ToString;
 @ToString(exclude = "onWard")
 public class TrainJourney {
   private String name;
+  private String stationFrom;
+  private String stationTo;
   private int price;
   private TrainJourney onWard;
 
   public TrainJourney (String name) {
     this.name = name;
+  }
+
+  public TrainJourney (String name, int price, TrainJourney onWard) {
+    this.name = name;
+    this.price = price;
+    this.onWard = onWard;
   }
 
   // 부작용이 발생하는 파괴적 갱신

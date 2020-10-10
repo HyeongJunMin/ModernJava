@@ -80,6 +80,15 @@
         - 계산결과를 표현할 자료구조가 필요하면?
         - 기존의 자료구조에 영향이 없는 새로운 자료구조를 만들어서 보여줘야 한다.
         - 부작용을 방지하기 위함
+    - 아 예제 이해함
+        - seoulToGumi가 있는 상황에서
+        - gumiToBusan을 붙인다고 하면?
+            - seoulToGumi는 더이상 seoulToGumi가 아닌 seoulToBusan이 될것
+            - 그러니까 파괴적이라는거고
+        - 함수형 갱신이 되려면
+            - seoulToGumi는 그대로 두고
+            - gumiToBusan에 새로만든 seoulToGumi2를 엮어준다고
+    - ㅇㅋ
     ```java
     @AllArgsConstructor
     @Getter @Setter
@@ -163,15 +172,47 @@
         return tree;
       }
     }
+    public class TreeProcessor {
+      public static int lookup(String key, int defaultValue, Tree tree) {
+        if (tree == null) return defaultValue;
+        if (key.equals(tree.getKey())) return tree.getValue();
+        return lookup(key, defaultValue, key.compareTo(tree.getKey()) < 0 ? tree.getLeft() : tree.getRight());
+      }
+    }
     ```
 3. 함수형 접근법 사용
     - 위 Tree update예제를 함수형으로 접근하려면?
     - 갱신을 수행할때마다 논리적으로 새로운 자료구조를 만든 다음, 사용자에게 적절한 버전의 자료구조를 전달해야 한다.
         - 기존 자료구조에는 변화가 일어나지 않는 것이 핵심
+    - 그럼 매 번 Tree를 새로만드는데 유의미한 자료구조인가?
+        - 여러 자료구조의 버전을 모두 저장했다가 적절한 버전을 사용하는 방식을 취하면 유의미하다고 한다.
+    - 예제코드
+    ```java
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Getter @Setter
+    @ToString
+    public class Tree {
+      private String key;
+      private int value;
+      private Tree left, right;
+      public static Tree fUpdate(String key, int newValue, Tree tree) {
+        return (tree == null)
+            ? new Tree(key, newValue, null, null)
+            : key.equals(tree.getKey())
+              ? new Tree(key, newValue, tree.getLeft(), tree.getRight()) 
+              : key.compareTo(tree.getKey()) < 0
+                ? new Tree(tree.getKey(), tree.getValue(), fUpdate(key, newValue, tree.getLeft()), tree.getRight())
+                : new Tree(tree.getKey(), tree.getValue(), tree.getLeft(), fUpdate(key, newValue, tree.getRight()));
+      }
+    }
+    ```
     
 ### 3. 스트림과 게으른 평가
 > 스트림은 단 한번만 소비 가능하다는 제약이있기 때문에 재귀적으로 정의할 수 없다.
 > 이 제약 때문에 어떤 문제가 발생하는지 살펴본다.
+- 미리 정의하기에는 너무 큰 자료구조는 게으른 자료구조로 만들 수 있다.
+    - 준비만 해 두고 요청이 있을 때만 자료구조 생성
 1. 자기 정의 스트림
     - 소수 스트림 예제 코드
     - 후보 수(candidate number)로 정확히 나누어 떨어지는지 매번 모든 수를 반복 확인
@@ -316,6 +357,7 @@
 ### 4. 패턴 매칭
 > 함수형 프로그래밍을 구분하는 중요한 특징
 > 거의 모든 함수형 프로그래밍 언어에서는 제공하지만, 자바에서는 지원하지 않는 기능
+> 자바의 switch-case와 유사
 1. 방문자 디자인 패턴
     - 방문자 디자인 패턴으로 자료형을 언랩할 수 있다.
     - 지정된 데이터 형식의 인스턴스를 인풋으로 받아 인스턴스의 모든 멤버에 접근한다.
@@ -328,6 +370,12 @@
     public class Ch19FunctionalProgrammingAdv {
       @Test
       public void visitorPattern() {
+        // Directory와 File은 Entry를 상속받고 있다.
+        // Directory는 List<Entry> directory를 갖고있으며 add(Entry entry)메서드는 그 리스트에 Entry를 추가한다.
+        // Directory.accept(Visitor visitor)를 호출하게되면
+        //  > directory가 갖는 directory리스트의 모든 요소에 대해 Visitor가 갖는 visit을 수행(로그를 남김)
+        //  > ViewVisitor는 오버로딩된 visit메서드 2개가 있다 visit(Directory directory), visit(File file)
+        // 결론적으로 accept가 호출된 객체가 갖는 모든 Entry들과 그 하위 Entry들에 대해 visit을 수행하게 된다.
         Directory root = new Directory("root");
         Directory bin = new Directory("bin");
         Directory share = new Directory("share");

@@ -12,6 +12,35 @@ import org.junit.jupiter.api.Test;
 public class Ch18FunctionalProgramming {
 
   @Test
+  void listAddTest() {
+    List<Integer> emptyList1 = new ArrayList();
+    List<Integer> emptyList2 = new ArrayList();
+    List<Integer> emptyList3 = new ArrayList();
+    List<Integer> numList1 = new ArrayList();
+    numList1.add(1);
+    List<List<Integer>> result = new ArrayList();
+    result.add(emptyList1);
+    log.info("result :{}", result);
+    result.add(emptyList2);
+    log.info("result :{}", result);
+    result.add(numList1);
+    log.info("result :{}", result);
+    result.add(emptyList3);
+    log.info("result :{}", result);
+    result.add(emptyList3);
+    log.info("result :{}", result);
+
+    List<Integer> integratedList = new ArrayList();
+    integratedList.addAll(numList1);
+    log.info("result :{}", integratedList);
+    integratedList.addAll(emptyList1);
+    log.info("result :{}", integratedList);
+    integratedList.addAll(emptyList2);
+    log.info("result :{}", integratedList);
+
+  }
+
+  @Test
   void divideList() {
     List<Integer> originList = Arrays.asList(1, 4, 9);
     List<List<Integer>> subList = subsets(originList);
@@ -69,6 +98,7 @@ public class Ch18FunctionalProgramming {
       copyList.addAll(list);
       result.add(copyList);
     }
+    log.info("insertAll progress. result : {}", result);
     return result;
   }
 
@@ -76,6 +106,7 @@ public class Ch18FunctionalProgramming {
     log.info("concat a : {}, b : {}", a, b);
     List<List<T>> r = new ArrayList<>(a);
     r.addAll(b);
+    log.info("concat result :{}", r);
     return r;
   }
 

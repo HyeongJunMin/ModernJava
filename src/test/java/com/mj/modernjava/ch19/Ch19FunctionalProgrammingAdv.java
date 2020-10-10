@@ -62,6 +62,15 @@ public class Ch19FunctionalProgrammingAdv {
   }
 
   @Test
+  public void whatMeaningJourneyIs() {
+    TrainJourney busan = new TrainJourney("Busan");
+    TrainJourney gumiToNothing = new TrainJourney("GumiToNothing", "Gumi", "", 0, null);
+    TrainJourney seoulToGumi = new TrainJourney("SeoulToBusan", "Seoul", "Gumi", 5000, gumiToNothing);
+    log.info("seoulToGumi :{}", seoulToGumi);
+    log.info("seoulToGumi onWard :{}", seoulToGumi.getOnWard());
+  }
+
+  @Test
   public void primesTest() {
     int number = 10;
     primes(10).forEach(result -> {
@@ -124,6 +133,12 @@ public class Ch19FunctionalProgrammingAdv {
 
   @Test
   public void visitorPattern() {
+    // Directory와 File은 Entry를 상속받고 있다.
+    // Directory는 List<Entry> directory를 갖고있으며 add(Entry entry)메서드는 그 리스트에 Entry를 추가한다.
+    // Directory.accept(Visitor visitor)를 호출하게되면
+    //  > directory가 갖는 directory리스트의 모든 요소에 대해 Visitor가 갖는 visit을 수행(로그를 남김)
+    //  > ViewVisitor는 오버로딩된 visit메서드 2개가 있다 visit(Directory directory), visit(File file)
+    // 결론적으로 accept가 호출된 객체가 갖는 모든 Entry들과 그 하위 Entry들에 대해 visit을 수행하게 된다.
     Directory root = new Directory("root");
     Directory bin = new Directory("bin");
     Directory share = new Directory("share");

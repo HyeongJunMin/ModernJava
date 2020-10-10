@@ -35,4 +35,13 @@ public class Tree {
     }
     return tree;
   }
+  public static Tree fUpdate(String key, int newValue, Tree tree) {
+    return (tree == null)
+        ? new Tree(key, newValue, null, null)
+        : key.equals(tree.getKey())
+          ? new Tree(key, newValue, tree.getLeft(), tree.getRight())
+          : key.compareTo(tree.getKey()) < 0
+            ? new Tree(tree.getKey(), tree.getValue(), fUpdate(key, newValue, tree.getLeft()), tree.getRight())
+            : new Tree(tree.getKey(), tree.getValue(), tree.getLeft(), fUpdate(key, newValue, tree.getRight()));
+  }
 }

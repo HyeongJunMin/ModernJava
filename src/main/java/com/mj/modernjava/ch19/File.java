@@ -5,8 +5,7 @@ public class File extends Entry{
     super(name);
   }
   public void add(Entry entry){}
-  public void accept(Visitor v)
-  {
+  public void accept(Visitor v) {
     v.visit(this);
   }
 }
