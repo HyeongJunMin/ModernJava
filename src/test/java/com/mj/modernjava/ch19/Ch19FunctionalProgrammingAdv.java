@@ -148,10 +148,12 @@ public class Ch19FunctionalProgrammingAdv {
     File img2 = new File("img2");
     root.add(conf);
     bin.add(readme);
-    root.add(bin);
+
     share.add(img);
     share.add(img2);
+
     root.add(share);
+    root.add(bin);
     root.accept(new ViewVisitor());
     // /root
     // /root/conf
